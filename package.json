@@ -1,0 +1,22 @@
+{
+  "name": "clawmox",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Safe Proxmox automation and infra runner control plane for agent-assisted operations",
+  "workspaces": [
+    "services/*",
+    "services/shared"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace @clawmox/shared && npm run build --workspace @clawmox/proxmox-mcp && npm run build --workspace @clawmox/infra-runner",
+    "typecheck": "npm run typecheck --workspace @clawmox/shared && npm run typecheck --workspace @clawmox/proxmox-mcp && npm run typecheck --workspace @clawmox/infra-runner",
+    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspaces",
+    "dev:proxmox-mcp": "npm --workspace @clawmox/proxmox-mcp run dev",
+    "dev:infra-runner": "npm --workspace @clawmox/infra-runner run dev"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "typescript": "^5.7.3"
+  }
+}

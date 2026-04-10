@@ -1,0 +1,21 @@
+{
+  "name": "@clawmox/proxmox-mcp",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "echo 'No linter configured yet for @clawmox/proxmox-mcp'",
+    "test": "echo 'No tests yet for @clawmox/proxmox-mcp'",
+    "dev": "node --watch --import tsx src/index.ts"
+  },
+  "dependencies": {
+    "@clawmox/shared": "0.1.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
