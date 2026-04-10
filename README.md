@@ -1,0 +1,32 @@
+# ClawMox
+
+ClawMox is a planned open-source control plane for safe Proxmox automation, infra execution, and agent-assisted operations.
+
+## Current state
+
+This repository currently contains the first-pass documentation set covering:
+- product requirements
+- architecture
+- API contracts
+- security model
+- operations runbooks
+- development roadmap
+- ADRs
+
+## Documentation
+
+Start here:
+- `docs/README.md`
+
+## Design direction
+
+ClawMox is built around a few core ideas:
+- Proxmox API first, not raw shell first
+- dedicated infra runner for Terraform and Ansible jobs
+- short-lived Docker execution for bounded automation tasks
+- approval gates for risky or destructive operations
+- strong auditability and clear trust boundaries
+
+## License
+
+MIT
