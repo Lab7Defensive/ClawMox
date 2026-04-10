@@ -49,7 +49,31 @@ export class ProxmoxApiClient {
     return this.request<ProxmoxGuestSummary[]>(`/nodes/${node}/lxc`);
   }
 
+  async getQemuConfig(node: string, vmid: number): Promise<Record<string, unknown>> {
+    return this.request<Record<string, unknown>>(`/nodes/${node}/qemu/${vmid}/config`);
+  }
+
+  async getLxcConfig(node: string, vmid: number): Promise<Record<string, unknown>> {
+    return this.request<Record<string, unknown>>(`/nodes/${node}/lxc/${vmid}/config`);
+  }
+
+  async listQemuSnapshots(node: string, vmid: number): Promise<Array<Record<string, unknown>>> {
+    return this.request<Array<Record<string, unknown>>>(`/nodes/${node}/qemu/${vmid}/snapshot`);
+  }
+
+  async listLxcSnapshots(node: string, vmid: number): Promise<Array<Record<string, unknown>>> {
+    return this.request<Array<Record<string, unknown>>>(`/nodes/${node}/lxc/${vmid}/snapshot`);
+  }
+
   async listStorage(node: string): Promise<ProxmoxStorageSummary[]> {
     return this.request<ProxmoxStorageSummary[]>(`/nodes/${node}/storage`);
+  }
+
+  async listTasks(node: string, limit = 25): Promise<Array<Record<string, unknown>>> {
+    return this.request<Array<Record<string, unknown>>>(`/nodes/${node}/tasks?limit=${limit}`);
+  }
+
+  async listBackupContent(node: string, storage: string): Promise<Array<Record<string, unknown>>> {
+    return this.request<Array<Record<string, unknown>>>(`/nodes/${node}/storage/${storage}/content`);
   }
 }

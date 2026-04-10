@@ -7,7 +7,16 @@ import {
 } from '../../shared/src/index.js';
 import { ProxmoxApiClient } from './client.js';
 import { loadProxmoxConfig } from './config.js';
-import { normalizeClusterStatus, normalizeGuests, normalizeNodeInventory, normalizeStorage } from './normalizers.js';
+import {
+  normalizeBackups,
+  normalizeClusterStatus,
+  normalizeGuestConfig,
+  normalizeGuests,
+  normalizeNodeInventory,
+  normalizeSnapshots,
+  normalizeStorage,
+  normalizeTasks
+} from './normalizers.js';
 
 export class ProxmoxMcpService {
   private readonly config = loadProxmoxConfig();
@@ -33,7 +42,7 @@ export class ProxmoxMcpService {
     const risk = classifyRisk('get_cluster_status');
     const approvalRequired = requiresApproval(risk, parsed.environment);
 
-    const response = {
+    return serviceResponseSchema.parse({
       status: 'ok' as const,
       summary: 'Retrieved live read-only Proxmox cluster status.',
       correlationId: parsed.correlationId,
@@ -44,9 +53,7 @@ export class ProxmoxMcpService {
         environment: parsed.environment,
         live: true
       }
-    };
-
-    return serviceResponseSchema.parse(response);
+    });
   }
 
   async listGuests(environment: 'lab' | 'staging' | 'production' = this.config.environment) {
@@ -78,6 +85,31 @@ export class ProxmoxMcpService {
     });
   }
 
+  async getGuestDetail(node: string, guestType: 'vm' | 'lxc', guestId: number) {
+    const config = guestType === 'vm'
+      ? await this.client.getQemuConfig(node, guestId)
+      : await this.client.getLxcConfig(node, guestId);
+
+    const snapshots = guestType === 'vm'
+      ? await this.client.listQemuSnapshots(node, guestId)
+      : await this.client.listLxcSnapshots(node, guestId);
+
+    return serviceResponseSchema.parse({
+      status: 'ok' as const,
+      summary: `Retrieved live read-only ${guestType.toUpperCase()} detail for ${guestId}.`,
+      correlationId: createCorrelationId('guest-detail'),
+      approvalState: 'not_required',
+      details: {
+        node,
+        guestType,
+        guestId,
+        live: true,
+        config: normalizeGuestConfig(config),
+        snapshots: normalizeSnapshots(snapshots)
+      }
+    });
+  }
+
   async listStorage(environment: 'lab' | 'staging' | 'production' = this.config.environment) {
     const nodes = await this.client.listNodes();
     const storageResults = await Promise.all(
@@ -96,6 +128,57 @@ export class ProxmoxMcpService {
         environment,
         live: true,
         nodes: storageResults
+      }
+    });
+  }
+
+  async listTasks(environment: 'lab' | 'staging' | 'production' = this.config.environment, limit = 25) {
+    const nodes = await this.client.listNodes();
+    const taskResults = await Promise.all(
+      nodes.map(async (node) => ({
+        node: node.node,
+        tasks: normalizeTasks(await this.client.listTasks(node.node, limit))
+      }))
+    );
+
+    return serviceResponseSchema.parse({
+      status: 'ok' as const,
+      summary: 'Retrieved live read-only Proxmox task inventory.',
+      correlationId: createCorrelationId('tasks'),
+      approvalState: 'not_required',
+      details: {
+        environment,
+        live: true,
+        nodes: taskResults
+      }
+    });
+  }
+
+  async listBackups(environment: 'lab' | 'staging' | 'production' = this.config.environment) {
+    const nodes = await this.client.listNodes();
+    const backupResults = await Promise.all(
+      nodes.map(async (node) => {
+        const storages = await this.client.listStorage(node.node);
+        const backupCapable = storages.filter((storage) => (storage.content ?? '').includes('backup'));
+        const content = await Promise.all(
+          backupCapable.map(async (storage) => ({
+            storage: storage.storage,
+            backups: normalizeBackups(await this.client.listBackupContent(node.node, storage.storage))
+          }))
+        );
+        return { node: node.node, storages: content };
+      })
+    );
+
+    return serviceResponseSchema.parse({
+      status: 'ok' as const,
+      summary: 'Retrieved live read-only backup inventory from backup-capable storages.',
+      correlationId: createCorrelationId('backups'),
+      approvalState: 'not_required',
+      details: {
+        environment,
+        live: true,
+        nodes: backupResults
       }
     });
   }

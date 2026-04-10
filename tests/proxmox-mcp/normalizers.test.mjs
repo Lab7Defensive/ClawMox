@@ -5,6 +5,8 @@ import {
   normalizeStorage
 } from '../../dist/proxmox-mcp/src/normalizers.js';
 
+import { normalizeTasks, normalizeBackups } from '../../dist/proxmox-mcp/src/normalizers.js';
+
 const cluster = normalizeClusterStatus(
   [
     { type: 'cluster', name: 'lab7-cluster' },
@@ -27,3 +29,9 @@ const storage = normalizeStorage([{ storage: 'local-lvm', used: 10, total: 100, 
 assert.equal(storage[0].available, 90);
 
 console.log('normalizers.test.mjs passed');
+
+const tasks = normalizeTasks([{ upid: 'UPID:1', status: 'OK', user: 'root@pam' }]);
+assert.equal(tasks[0].status, 'OK');
+
+const backups = normalizeBackups([{ content: 'backup', volid: 'backup/vzdump-qemu-101.vma.zst' }]);
+assert.equal(backups[0].content, 'backup');

@@ -58,6 +58,27 @@ export function normalizeGuests(type: 'vm' | 'lxc', guests: ProxmoxGuestSummary[
   }));
 }
 
+export function normalizeGuestConfig(config: Record<string, unknown>) {
+  return {
+    cores: config.cores ?? config.cpus ?? null,
+    memory: config.memory ?? null,
+    onboot: config.onboot ?? null,
+    bootOrder: config.boot ?? null,
+    networkKeys: Object.keys(config).filter((key) => key.startsWith('net')),
+    diskKeys: Object.keys(config).filter((key) => /^(scsi|virtio|ide|sata|rootfs|mp)\d*/.test(key))
+  };
+}
+
+export function normalizeSnapshots(entries: Array<Record<string, unknown>>) {
+  return entries.map((entry) => ({
+    name: String(entry.name ?? 'unknown'),
+    description: entry.description ? String(entry.description) : '',
+    parent: entry.parent ? String(entry.parent) : null,
+    snaptime: entry.snaptime ?? null,
+    vmstate: entry.vmstate ?? null
+  }));
+}
+
 export function normalizeStorage(storage: ProxmoxStorageSummary[]) {
   return storage.map((entry) => ({
     storage: entry.storage,
@@ -67,4 +88,29 @@ export function normalizeStorage(storage: ProxmoxStorageSummary[]) {
     available: entry.avail ?? 0,
     content: entry.content ?? ''
   }));
+}
+
+export function normalizeTasks(entries: Array<Record<string, unknown>>) {
+  return entries.map((entry) => ({
+    upid: entry.upid ? String(entry.upid) : null,
+    node: entry.node ? String(entry.node) : null,
+    type: entry.type ? String(entry.type) : null,
+    id: entry.id ? String(entry.id) : null,
+    status: entry.status ? String(entry.status) : null,
+    starttime: entry.starttime ?? null,
+    endtime: entry.endtime ?? null,
+    user: entry.user ? String(entry.user) : null
+  }));
+}
+
+export function normalizeBackups(entries: Array<Record<string, unknown>>) {
+  return entries
+    .filter((entry) => String(entry.content ?? '').includes('backup') || String(entry.volid ?? '').includes('backup'))
+    .map((entry) => ({
+      volid: entry.volid ? String(entry.volid) : null,
+      content: entry.content ? String(entry.content) : null,
+      size: entry.size ?? null,
+      vmid: entry.vmid ?? null,
+      notes: entry.notes ? String(entry.notes) : ''
+    }));
 }
