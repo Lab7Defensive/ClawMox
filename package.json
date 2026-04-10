@@ -11,7 +11,7 @@
     "build": "npm run build --workspace @clawmox/shared && npm run build --workspace @clawmox/proxmox-mcp && npm run build --workspace @clawmox/infra-runner",
     "typecheck": "npm run typecheck --workspace @clawmox/shared && npm run typecheck --workspace @clawmox/proxmox-mcp && npm run typecheck --workspace @clawmox/infra-runner",
     "lint": "npm run lint --workspaces",
-    "test": "npm run test --workspaces",
+    "test": "npm run test --workspaces && node tests/proxmox-mcp/normalizers.test.mjs",
     "dev:proxmox-mcp": "npm --workspace @clawmox/proxmox-mcp run dev",
     "dev:infra-runner": "npm --workspace @clawmox/infra-runner run dev"
   },

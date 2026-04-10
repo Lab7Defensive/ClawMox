@@ -6,6 +6,8 @@ async function main(): Promise<void> {
   console.log(`[clawmox/proxmox-mcp] ${status}`);
 }
 
+export { ProxmoxMcpService };
+
 main().catch((error) => {
   console.error('[clawmox/proxmox-mcp] fatal', error);
   process.exitCode = 1;
