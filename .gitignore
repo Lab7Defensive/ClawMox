@@ -7,3 +7,4 @@ coverage/
 artifacts/
 .tmp/
 .DS_Store
+!.env.example
