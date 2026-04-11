@@ -30,3 +30,18 @@ ClawMox is built around a few core ideas:
 ## License
 
 MIT
+
+
+## Local setup
+
+1. Copy `.env.example` to `.env`
+2. Fill in your Proxmox API token and environment values
+3. Create `./secrets` for mounted runner secrets
+4. Run:
+   - `npm install`
+   - `npm run typecheck`
+   - `npm run build`
+   - `npm test`
+
+For a test checklist, see:
+- `scripts/office-test-checklist.md`

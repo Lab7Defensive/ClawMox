@@ -15,7 +15,14 @@ import type { RunnerJobRecord } from './types.js';
 
 export class InfraRunnerService {
   private readonly config = loadRunnerConfig();
-  private readonly launcher = new DockerJobLauncher();
+  private readonly launcher = new DockerJobLauncher(
+    {
+      terraform: this.config.terraformImage,
+      ansible: this.config.ansibleImage
+    },
+    this.config.secretsDir,
+    this.config.artifactsDir
+  );
   private readonly artifacts = new ArtifactStore(this.config.artifactsDir);
   private readonly store = new JobStore(defaultJobStorePath(this.config.artifactsDir));
 
@@ -28,7 +35,7 @@ export class InfraRunnerService {
     const risk = classifyRisk(parsed.jobType);
     const approvalRequired = requiresApproval(risk, parsed.environment);
     const approvalMatches = approvalRequired ? verifyApprovalScope(parsed.approval, parsed) : true;
-    const prepared = this.launcher.prepare(parsed.jobType);
+    const prepared = this.launcher.prepare(parsed.jobType, parsed.scope);
     const now = new Date().toISOString();
     const jobId = createCorrelationId('job');
 
@@ -85,13 +92,27 @@ export class InfraRunnerService {
       });
     }
 
-    const prepared = this.launcher.prepare(job.jobType);
+    const prepared = this.launcher.prepare(job.jobType, job.scope);
     job.status = 'running';
     job.updatedAt = new Date().toISOString();
     await this.store.upsert(job);
 
     const execution = await this.launcher.execute(prepared);
-    const logPath = await this.artifacts.writeJobArtifact(jobId, 'execution.log', `${execution.stdout}\n${execution.stderr}`);
+    const logPath = await this.artifacts.writeJobArtifact(
+      jobId,
+      'execution.log',
+      JSON.stringify(
+        {
+          command: execution.command,
+          stdout: execution.stdout,
+          stderr: execution.stderr,
+          exitCode: execution.exitCode,
+          executed: execution.executed
+        },
+        null,
+        2
+      )
+    );
 
     job.status = execution.exitCode === 0 ? 'succeeded' : 'failed';
     job.updatedAt = new Date().toISOString();
@@ -109,7 +130,8 @@ export class InfraRunnerService {
         job,
         execution: {
           exitCode: execution.exitCode,
-          executed: execution.executed
+          executed: execution.executed,
+          command: execution.command
         }
       },
       artifacts: job.artifactPaths

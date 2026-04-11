@@ -12,19 +12,32 @@ export interface ExecutionResult {
   stdout: string;
   stderr: string;
   executed: boolean;
+  command: string[];
 }
 
 export class DockerJobLauncher {
-  prepare(jobType: string): PreparedContainerJob {
+  constructor(
+    private readonly images: { terraform: string; ansible: string },
+    private readonly secretsDir: string,
+    private readonly artifactsDir: string
+  ) {}
+
+  prepare(jobType: string, scope: string): PreparedContainerJob {
+    const isTerraform = jobType.startsWith('terraform');
+    const safeScope = scope.replace(/[^a-zA-Z0-9_./-]/g, '_');
+
     return {
-      image: jobType.startsWith('terraform')
-        ? 'ghcr.io/lab7defensive/clawmox-terraform:latest'
-        : 'ghcr.io/lab7defensive/clawmox-ansible:latest',
-      command: jobType.startsWith('terraform')
-        ? ['sh', '-lc', 'echo terraform-run-placeholder && pwd && ls -la']
-        : ['sh', '-lc', 'echo ansible-run-placeholder && pwd && ls -la'],
-      mounts: [],
-      environment: {}
+      image: isTerraform ? this.images.terraform : this.images.ansible,
+      command: isTerraform
+        ? ['sh', '-lc', `echo terraform-run-placeholder && echo scope=${safeScope} && ls -la /workspace || true`]
+        : ['sh', '-lc', `echo ansible-run-placeholder && echo scope=${safeScope} && ls -la /workspace || true`],
+      mounts: [
+        { source: this.artifactsDir, target: '/artifacts' },
+        { source: this.secretsDir, target: '/run/clawmox-secrets', readonly: true }
+      ],
+      environment: {
+        CLAWMOX_SECRETS_DIR: '/run/clawmox-secrets'
+      }
     };
   }
 
@@ -45,10 +58,10 @@ export class DockerJobLauncher {
       child.stdout.on('data', (chunk) => { stdout += chunk.toString(); });
       child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
       child.on('error', (error) => {
-        resolve({ exitCode: 1, stdout, stderr: `${stderr}\n${String(error)}`, executed: false });
+        resolve({ exitCode: 1, stdout, stderr: `${stderr}\n${String(error)}`, executed: false, command: dockerArgs });
       });
       child.on('close', (code) => {
-        resolve({ exitCode: code ?? 1, stdout, stderr, executed: true });
+        resolve({ exitCode: code ?? 1, stdout, stderr, executed: true, command: dockerArgs });
       });
     });
   }
