@@ -2,10 +2,12 @@ import assert from 'node:assert/strict';
 import {
   normalizeClusterStatus,
   normalizeGuests,
-  normalizeStorage
+  normalizeStorage,
+  normalizeTasks,
+  normalizeBackups,
+  normalizeGuestConfig,
+  normalizeSnapshots
 } from '../../dist/proxmox-mcp/src/normalizers.js';
-
-import { normalizeTasks, normalizeBackups } from '../../dist/proxmox-mcp/src/normalizers.js';
 
 const cluster = normalizeClusterStatus(
   [
@@ -28,10 +30,17 @@ assert.equal(guests[0].type, 'vm');
 const storage = normalizeStorage([{ storage: 'local-lvm', used: 10, total: 100, avail: 90 }]);
 assert.equal(storage[0].available, 90);
 
-console.log('normalizers.test.mjs passed');
-
 const tasks = normalizeTasks([{ upid: 'UPID:1', status: 'OK', user: 'root@pam' }]);
 assert.equal(tasks[0].status, 'OK');
 
 const backups = normalizeBackups([{ content: 'backup', volid: 'backup/vzdump-qemu-101.vma.zst' }]);
 assert.equal(backups[0].content, 'backup');
+
+const config = normalizeGuestConfig({ memory: 4096, cores: 4, net0: 'virtio', scsi0: 'local-lvm' });
+assert.equal(config.memory, 4096);
+assert.deepEqual(config.networkKeys, ['net0']);
+
+const snapshots = normalizeSnapshots([{ name: 'pre-change', description: 'before maintenance' }]);
+assert.equal(snapshots[0].name, 'pre-change');
+
+console.log('normalizers.test.mjs passed');

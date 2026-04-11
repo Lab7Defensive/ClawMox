@@ -13,7 +13,8 @@ export const approvalEnvelopeSchema = z.object({
   requestedAt: z.string().min(1),
   approvedAt: z.string().min(1).optional(),
   approvedBy: z.string().min(1).optional(),
-  expiresAt: z.string().min(1).optional()
+  expiresAt: z.string().min(1).optional(),
+  scopeHash: z.string().min(1).optional()
 });
 
 export const serviceResponseSchema = z.object({

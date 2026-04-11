@@ -110,6 +110,28 @@ export class ProxmoxMcpService {
     });
   }
 
+
+
+  async listGuestSnapshots(node: string, guestType: 'vm' | 'lxc', guestId: number) {
+    const snapshots = guestType === 'vm'
+      ? await this.client.listQemuSnapshots(node, guestId)
+      : await this.client.listLxcSnapshots(node, guestId);
+
+    return serviceResponseSchema.parse({
+      status: 'ok' as const,
+      summary: `Retrieved live read-only snapshot list for ${guestType.toUpperCase()} ${guestId}.`,
+      correlationId: createCorrelationId('snapshots'),
+      approvalState: 'not_required',
+      details: {
+        node,
+        guestType,
+        guestId,
+        live: true,
+        snapshots: normalizeSnapshots(snapshots)
+      }
+    });
+  }
+
   async listStorage(environment: 'lab' | 'staging' | 'production' = this.config.environment) {
     const nodes = await this.client.listNodes();
     const storageResults = await Promise.all(
