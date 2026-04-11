@@ -45,3 +45,5 @@ MIT
 
 For a test checklist, see:
 - `scripts/office-test-checklist.md`
+
+- `scripts/demo-flow.md`

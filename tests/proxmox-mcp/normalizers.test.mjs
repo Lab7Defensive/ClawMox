@@ -6,7 +6,8 @@ import {
   normalizeTasks,
   normalizeBackups,
   normalizeGuestConfig,
-  normalizeSnapshots
+  normalizeSnapshots,
+  normalizeTaskStatus
 } from '../../dist/proxmox-mcp/src/normalizers.js';
 import { createScopeHash, verifyApprovalScope } from '../../dist/shared/src/utils/approval.js';
 
@@ -33,6 +34,9 @@ assert.equal(storage[0].available, 90);
 
 const tasks = normalizeTasks([{ upid: 'UPID:1', status: 'OK', user: 'root@pam' }]);
 assert.equal(tasks[0].status, 'OK');
+
+const taskStatus = normalizeTaskStatus({ upid: 'UPID:1', status: 'stopped', exitstatus: 'OK' });
+assert.equal(taskStatus.exitStatus, 'OK');
 
 const backups = normalizeBackups([{ content: 'backup', volid: 'backup/vzdump-qemu-101.vma.zst' }]);
 assert.equal(backups[0].content, 'backup');

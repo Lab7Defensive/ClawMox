@@ -114,3 +114,17 @@ export function normalizeBackups(entries: Array<Record<string, unknown>>) {
       notes: entry.notes ? String(entry.notes) : ''
     }));
 }
+
+
+export function normalizeTaskStatus(entry: Record<string, unknown>) {
+  return {
+    upid: entry.upid ? String(entry.upid) : null,
+    node: entry.node ? String(entry.node) : null,
+    status: entry.status ? String(entry.status) : null,
+    exitStatus: entry.exitstatus ? String(entry.exitstatus) : null,
+    starttime: entry.starttime ?? null,
+    endtime: entry.endtime ?? null,
+    type: entry.type ? String(entry.type) : null,
+    user: entry.user ? String(entry.user) : null
+  };
+}

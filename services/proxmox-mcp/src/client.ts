@@ -73,6 +73,10 @@ export class ProxmoxApiClient {
     return this.request<Array<Record<string, unknown>>>(`/nodes/${node}/tasks?limit=${limit}`);
   }
 
+  async getTaskStatus(node: string, upid: string): Promise<Record<string, unknown>> {
+    return this.request<Record<string, unknown>>(`/nodes/${node}/tasks/${encodeURIComponent(upid)}/status`);
+  }
+
   async listBackupContent(node: string, storage: string): Promise<Array<Record<string, unknown>>> {
     return this.request<Array<Record<string, unknown>>>(`/nodes/${node}/storage/${storage}/content`);
   }

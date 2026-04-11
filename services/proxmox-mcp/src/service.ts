@@ -15,7 +15,8 @@ import {
   normalizeNodeInventory,
   normalizeSnapshots,
   normalizeStorage,
-  normalizeTasks
+  normalizeTasks,
+  normalizeTaskStatus
 } from './normalizers.js';
 
 export class ProxmoxMcpService {
@@ -176,6 +177,25 @@ export class ProxmoxMcpService {
     });
   }
 
+
+
+  async getTaskStatus(node: string, upid: string) {
+    const task = await this.client.getTaskStatus(node, upid);
+
+    return serviceResponseSchema.parse({
+      status: 'ok' as const,
+      summary: `Retrieved live task status for ${upid}.`,
+      correlationId: createCorrelationId('task-status'),
+      approvalState: 'not_required',
+      details: {
+        node,
+        upid,
+        live: true,
+        task: normalizeTaskStatus(task)
+      }
+    });
+  }
+
   async listBackups(environment: 'lab' | 'staging' | 'production' = this.config.environment) {
     const nodes = await this.client.listNodes();
     const backupResults = await Promise.all(
@@ -217,17 +237,21 @@ export class ProxmoxMcpService {
       });
     }
 
+    const result = await this.client.startGuest(node, guestType, guestId);
+
     return serviceResponseSchema.parse({
       status: 'ok' as const,
-      summary: `Start guest action scaffolded for ${guestType.toUpperCase()} ${guestId} on ${node}.`,
+      summary: `Start guest action executed for ${guestType.toUpperCase()} ${guestId} on ${node}.`,
       correlationId: createCorrelationId('guest-start'),
       approvalState: 'approved',
       details: {
         node,
         guestType,
         guestId,
-        liveWriteEnabled: false,
-        plannedCall: 'status/start'
+        liveWriteEnabled: true,
+        result,
+        plannedCall: 'status/start',
+        caution: 'Live write path should only be enabled with validated approval scope and limited Proxmox token permissions.'
       }
     });
   }
@@ -242,17 +266,21 @@ export class ProxmoxMcpService {
       });
     }
 
+    const result = await this.client.stopGuest(node, guestType, guestId);
+
     return serviceResponseSchema.parse({
       status: 'ok' as const,
-      summary: `Stop guest action scaffolded for ${guestType.toUpperCase()} ${guestId} on ${node}.`,
+      summary: `Stop guest action executed for ${guestType.toUpperCase()} ${guestId} on ${node}.`,
       correlationId: createCorrelationId('guest-stop'),
       approvalState: 'approved',
       details: {
         node,
         guestType,
         guestId,
-        liveWriteEnabled: false,
-        plannedCall: 'status/stop'
+        liveWriteEnabled: true,
+        result,
+        plannedCall: 'status/stop',
+        caution: 'Live write path should only be enabled with validated approval scope and limited Proxmox token permissions.'
       }
     });
   }
@@ -267,9 +295,11 @@ export class ProxmoxMcpService {
       });
     }
 
+    const result = await this.client.createSnapshot(node, guestType, guestId, snapshotName);
+
     return serviceResponseSchema.parse({
       status: 'ok' as const,
-      summary: `Snapshot action scaffolded for ${guestType.toUpperCase()} ${guestId} on ${node}.`,
+      summary: `Snapshot action executed for ${guestType.toUpperCase()} ${guestId} on ${node}.`,
       correlationId: createCorrelationId('guest-snapshot'),
       approvalState: 'approved',
       details: {
@@ -277,8 +307,10 @@ export class ProxmoxMcpService {
         guestType,
         guestId,
         snapshotName,
-        liveWriteEnabled: false,
-        plannedCall: 'snapshot/create'
+        result,
+        liveWriteEnabled: true,
+        plannedCall: 'snapshot/create',
+        caution: 'Live write path should only be enabled with validated approval scope and limited Proxmox token permissions.'
       }
     });
   }
