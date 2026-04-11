@@ -17,6 +17,7 @@ This repository currently contains the first-pass documentation set covering:
 
 Start here:
 - `docs/README.md`
+- `docs/user-guide-and-setup.md`
 
 ## Design direction
 
