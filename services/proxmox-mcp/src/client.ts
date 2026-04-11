@@ -76,4 +76,44 @@ export class ProxmoxApiClient {
   async listBackupContent(node: string, storage: string): Promise<Array<Record<string, unknown>>> {
     return this.request<Array<Record<string, unknown>>>(`/nodes/${node}/storage/${storage}/content`);
   }
+
+  async post(path: string, body: URLSearchParams): Promise<unknown> {
+    const response = await fetch(`${this.config.apiUrl}${path}`, {
+      method: 'POST',
+      headers: {
+        Authorization: this.authHeader,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body
+    });
+
+    if (!response.ok) {
+      throw new Error(`Proxmox API POST failed: ${response.status} ${response.statusText} for ${path}`);
+    }
+
+    const payload = (await response.json()) as ProxmoxEnvelope<unknown>;
+    return payload.data;
+  }
+
+  async startGuest(node: string, guestType: 'vm' | 'lxc', guestId: number): Promise<unknown> {
+    const kind = guestType === 'vm' ? 'qemu' : 'lxc';
+    return this.post(`/nodes/${node}/${kind}/${guestId}/status/start`, new URLSearchParams());
+  }
+
+  async stopGuest(node: string, guestType: 'vm' | 'lxc', guestId: number): Promise<unknown> {
+    const kind = guestType === 'vm' ? 'qemu' : 'lxc';
+    return this.post(`/nodes/${node}/${kind}/${guestId}/status/stop`, new URLSearchParams());
+  }
+
+  async rebootGuest(node: string, guestType: 'vm' | 'lxc', guestId: number): Promise<unknown> {
+    const kind = guestType === 'vm' ? 'qemu' : 'lxc';
+    return this.post(`/nodes/${node}/${kind}/${guestId}/status/reboot`, new URLSearchParams());
+  }
+
+  async createSnapshot(node: string, guestType: 'vm' | 'lxc', guestId: number, name: string): Promise<unknown> {
+    const kind = guestType === 'vm' ? 'qemu' : 'lxc';
+    return this.post(`/nodes/${node}/${kind}/${guestId}/snapshot`, new URLSearchParams({ snapname: name }));
+  }
+
 }
+

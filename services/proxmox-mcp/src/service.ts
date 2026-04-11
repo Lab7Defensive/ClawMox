@@ -205,6 +205,84 @@ export class ProxmoxMcpService {
     });
   }
 
+
+
+  async startGuest(node: string, guestType: 'vm' | 'lxc', guestId: number, approvalScopeMatches = false) {
+    if (!approvalScopeMatches) {
+      return serviceResponseSchema.parse({
+        status: 'error' as const,
+        summary: 'Start guest blocked because approval scope is missing or invalid.',
+        correlationId: createCorrelationId('guest-start'),
+        approvalState: 'required'
+      });
+    }
+
+    return serviceResponseSchema.parse({
+      status: 'ok' as const,
+      summary: `Start guest action scaffolded for ${guestType.toUpperCase()} ${guestId} on ${node}.`,
+      correlationId: createCorrelationId('guest-start'),
+      approvalState: 'approved',
+      details: {
+        node,
+        guestType,
+        guestId,
+        liveWriteEnabled: false,
+        plannedCall: 'status/start'
+      }
+    });
+  }
+
+  async stopGuest(node: string, guestType: 'vm' | 'lxc', guestId: number, approvalScopeMatches = false) {
+    if (!approvalScopeMatches) {
+      return serviceResponseSchema.parse({
+        status: 'error' as const,
+        summary: 'Stop guest blocked because approval scope is missing or invalid.',
+        correlationId: createCorrelationId('guest-stop'),
+        approvalState: 'required'
+      });
+    }
+
+    return serviceResponseSchema.parse({
+      status: 'ok' as const,
+      summary: `Stop guest action scaffolded for ${guestType.toUpperCase()} ${guestId} on ${node}.`,
+      correlationId: createCorrelationId('guest-stop'),
+      approvalState: 'approved',
+      details: {
+        node,
+        guestType,
+        guestId,
+        liveWriteEnabled: false,
+        plannedCall: 'status/stop'
+      }
+    });
+  }
+
+  async createSnapshot(node: string, guestType: 'vm' | 'lxc', guestId: number, snapshotName: string, approvalScopeMatches = false) {
+    if (!approvalScopeMatches) {
+      return serviceResponseSchema.parse({
+        status: 'error' as const,
+        summary: 'Create snapshot blocked because approval scope is missing or invalid.',
+        correlationId: createCorrelationId('guest-snapshot'),
+        approvalState: 'required'
+      });
+    }
+
+    return serviceResponseSchema.parse({
+      status: 'ok' as const,
+      summary: `Snapshot action scaffolded for ${guestType.toUpperCase()} ${guestId} on ${node}.`,
+      correlationId: createCorrelationId('guest-snapshot'),
+      approvalState: 'approved',
+      details: {
+        node,
+        guestType,
+        guestId,
+        snapshotName,
+        liveWriteEnabled: false,
+        plannedCall: 'snapshot/create'
+      }
+    });
+  }
+
   async ping(): Promise<string> {
     return 'proxmox-mcp-ready';
   }

@@ -8,6 +8,7 @@ import {
   normalizeGuestConfig,
   normalizeSnapshots
 } from '../../dist/proxmox-mcp/src/normalizers.js';
+import { createScopeHash, verifyApprovalScope } from '../../dist/shared/src/utils/approval.js';
 
 const cluster = normalizeClusterStatus(
   [
@@ -42,5 +43,10 @@ assert.deepEqual(config.networkKeys, ['net0']);
 
 const snapshots = normalizeSnapshots([{ name: 'pre-change', description: 'before maintenance' }]);
 assert.equal(snapshots[0].name, 'pre-change');
+
+const payload = { jobType: 'terraform-apply', environment: 'production', scope: 'network/core' };
+const scopeHash = createScopeHash(payload);
+assert.equal(verifyApprovalScope({ approvalId: 'a1', requestedAt: 'now', scopeHash }, payload), true);
+assert.equal(verifyApprovalScope({ approvalId: 'a1', requestedAt: 'now', scopeHash: 'wrong' }, payload), false);
 
 console.log('normalizers.test.mjs passed');

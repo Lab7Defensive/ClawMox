@@ -20,7 +20,9 @@ export class DockerJobLauncher {
       image: jobType.startsWith('terraform')
         ? 'ghcr.io/lab7defensive/clawmox-terraform:latest'
         : 'ghcr.io/lab7defensive/clawmox-ansible:latest',
-      command: ['sh', '-lc', `echo placeholder-${jobType}`],
+      command: jobType.startsWith('terraform')
+        ? ['sh', '-lc', 'echo terraform-run-placeholder && pwd && ls -la']
+        : ['sh', '-lc', 'echo ansible-run-placeholder && pwd && ls -la'],
       mounts: [],
       environment: {}
     };

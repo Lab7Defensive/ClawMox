@@ -10,13 +10,14 @@ import {
 import { ArtifactStore } from './artifacts.js';
 import { loadRunnerConfig } from './config.js';
 import { DockerJobLauncher } from './docker.js';
+import { defaultJobStorePath, JobStore } from './store.js';
 import type { RunnerJobRecord } from './types.js';
 
 export class InfraRunnerService {
   private readonly config = loadRunnerConfig();
   private readonly launcher = new DockerJobLauncher();
   private readonly artifacts = new ArtifactStore(this.config.artifactsDir);
-  private readonly jobs = new Map<string, RunnerJobRecord>();
+  private readonly store = new JobStore(defaultJobStorePath(this.config.artifactsDir));
 
   async submitJob(input: Record<string, unknown> = {}) {
     const parsed = runnerJobRequestSchema.parse({
@@ -52,7 +53,7 @@ export class InfraRunnerService {
       artifactPaths: [artifactPath]
     };
 
-    this.jobs.set(jobId, record);
+    await this.store.upsert(record);
 
     return serviceResponseSchema.parse({
       status: accepted ? 'ok' as const : 'error' as const,
@@ -75,7 +76,7 @@ export class InfraRunnerService {
   }
 
   async executeJob(jobId: string) {
-    const job = this.jobs.get(jobId);
+    const job = await this.store.get(jobId);
     if (!job) {
       return serviceResponseSchema.parse({
         status: 'error' as const,
@@ -87,6 +88,7 @@ export class InfraRunnerService {
     const prepared = this.launcher.prepare(job.jobType);
     job.status = 'running';
     job.updatedAt = new Date().toISOString();
+    await this.store.upsert(job);
 
     const execution = await this.launcher.execute(prepared);
     const logPath = await this.artifacts.writeJobArtifact(jobId, 'execution.log', `${execution.stdout}\n${execution.stderr}`);
@@ -94,6 +96,7 @@ export class InfraRunnerService {
     job.status = execution.exitCode === 0 ? 'succeeded' : 'failed';
     job.updatedAt = new Date().toISOString();
     job.artifactPaths.push(logPath);
+    await this.store.upsert(job);
 
     return serviceResponseSchema.parse({
       status: execution.exitCode === 0 ? 'ok' as const : 'error' as const,
@@ -113,8 +116,8 @@ export class InfraRunnerService {
     });
   }
 
-  listJobs() {
-    return [...this.jobs.values()];
+  async listJobs() {
+    return this.store.readAll();
   }
 
   async ping(): Promise<string> {
